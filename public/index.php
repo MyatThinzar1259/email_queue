@@ -11,9 +11,9 @@ $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $to = filter_var($_POST['to'], FILTER_VALIDATE_EMAIL);
     $subject = trim($_POST['subject'] ?? '');
-    $body_message = trim($_POST['body_message'] ?? '');
+    $bodyText = trim($_POST['body_message'] ?? '');
     
-    if (!$to || !$subject || !$body_message){
+    if (!$to || !$subject || !$bodyText){
         $message = 'Please fill in all fields.';
         $status  = 'error';
         goto show_form;
@@ -21,18 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $ip = $_SERVER['REMOTE_ADDR'];
     $_SESSION['last_sent'][$ip] ??= 0;
-    if (time() - $_SESSION['last_sent'][$ip] < 60) {
-        $message = 'Please wait 60 seconds before sending another email.';
-        $status  = 'error';
-        goto show_form;
-    }
 
     $mailer = new EmailSender();
-    $result = $mailer->sendEmail(
+    $result = $mailer->queue(
         to: $to,
         subject: $subject,
-        bodyHTML: nl2br(htmlspecialchars($body_message)),
-        body_message: $body_message
+        bodyHTML: nl2br(htmlspecialchars($bodyText)),
+        bodyText: $bodyText
     );
     $message = $result['message'];
     $status  = $result['success'] ? 'success' : 'error';
